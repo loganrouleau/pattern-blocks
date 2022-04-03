@@ -1,73 +1,28 @@
+const svgWidth = 1000;
+const svgHeight = 800;
 let svg = document.getElementById("svg");
 let startx, starty, buttonClicked, selectedShapeId, dragx, dragy;
 let shapeId = 1;
 let rightClickDragActivated = false;
-const shapes = {};
-const seedShapes = {
-  triangle: {
-    colour: "green",
-    points: [
-      [50, 0],
-      [100, 86.6],
-      [0, 86.6],
-    ],
-    offset: [120, 290],
-  },
-  square: {
-    colour: "orange",
-    points: [
-      [0, 0],
-      [100, 0],
-      [100, 100],
-      [0, 100],
-    ],
-    offset: [20, 140],
-  },
-  hexagon: {
-    colour: "yellow",
-    points: [
-      [50, 0],
-      [150, 0],
-      [200, 86.6],
-      [150, 173.2],
-      [50, 173.2],
-      [0, 86.6],
-    ],
-    offset: [10, 10],
-  },
-  trapezoid: {
-    colour: "red",
-    points: [
-      [50, 0],
-      [150, 0],
-      [200, 86.6],
-      [0,86.6],
-    ],
-    offset: [10, 200],
-  },
-  parallelogram: {
-    colour: "blue",
-    points: [
-      [50, 0],
-      [150, 0],
-      [100, 86.6],
-      [0, 86.6],
-    ],
-    offset: [10, 290],
-  },
-  rhombus: {
-    colour: "tan",
-    points: [
-      [0, 0],
-      [100, 0],
-      [186.6, 50],
-      [86.6, 50],
-    ],
-    offset: [10, 400],
-  },
-};
+
+let shapes = {};
 
 Object.keys(seedShapes).forEach((id) => createPolygon(id, "seed"));
+drawOutline();
+function drawOutline() {
+  var el = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+  // el.setAttribute("id", `${shapeName}_${shapeNameSuffix}`);
+  // el.style.fill = seedShape.colour;
+  el.style.fill = "none";
+  el.style.stroke = "black";
+  for (value of levels.car) {
+    var point = svg.createSVGPoint();
+    point.x = value[0] + 250;
+    point.y = value[1];
+    el.points.appendItem(point);
+  }
+  svg.appendChild(el);
+}
 
 function createPolygon(shapeName, shapeNameSuffix) {
   seedShape = seedShapes[shapeName];
@@ -93,16 +48,18 @@ function createPolygon(shapeName, shapeNameSuffix) {
   return el;
 }
 
+// let level1 = svg.getElementById("level_1")
+// console.log(level1);
+// level1.addEventListener("onclick", () => console.log('click'));
+
 svg.addEventListener("contextmenu", (e) => e.preventDefault());
 
 svg.addEventListener("mousedown", (e) => {
-  console.log(shapes);
-  console.log(seedShapes);
   if (e.target.tagName === "polygon") {
     selectedShapeId = e.target.getAttribute("id");
     if (selectedShapeId.endsWith("seed")) {
       let shapeName = selectedShapeId.substring(0, selectedShapeId.length - 5);
-      console.log(shapeName);
+      // console.log(shapeName);
       let newShape = {};
       newShape.points = seedShapes[shapeName].points;
       newShape.offset = JSON.parse(
@@ -124,7 +81,12 @@ svg.addEventListener("mousedown", (e) => {
   }
 });
 svg.addEventListener("mouseup", (e) => {
+  console.log(e.target);
   if (!selectedShapeId) {
+    console.log(e);
+    if (e.target.getAttribute("id") === "level_1") {
+      resetLevel();
+    }
     return;
   }
 
@@ -143,7 +105,7 @@ svg.addEventListener("mouseup", (e) => {
     }
   }
   if (buttonClicked === 0) {
-    if (e.clientX > 600 && e.clientY > 400) {
+    if (e.clientX > svgWidth - 150 && e.clientY > svgHeight - 150) {
       svg.removeChild(shapes[selectedShapeId].element);
       delete shapes[selectedShapeId];
     } else {
@@ -160,8 +122,8 @@ function pointerWithinBounds(event) {
   return (
     event.clientX > 0 &&
     event.clientY > 0 &&
-    event.clientX < 700 &&
-    event.clientY < 500
+    event.clientX < svgWidth &&
+    event.clientY < svgHeight
   );
 }
 
@@ -216,4 +178,14 @@ function detectHit(polygonElement) {
     }
   });
   return hitFound;
+}
+
+function resetLevel() {
+  console.log("resetting");
+  console.log(Object.values(shapes));
+  Object.values(shapes).forEach((shape) => svg.removeChild(shape.element));
+  // shapes.forEach((shape) => {
+  // svg.removeChild(shape.element);
+  // });
+  shapes = {};
 }
