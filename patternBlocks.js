@@ -15,7 +15,7 @@ function drawOutline() {
   // el.style.fill = seedShape.colour;
   el.style.fill = "none";
   el.style.stroke = "black";
-  for (value of levels.car) {
+  for (value of levels.car.outline) {
     var point = svg.createSVGPoint();
     point.x = value[0] + 250;
     point.y = value[1];
@@ -48,9 +48,11 @@ function createPolygon(shapeName, shapeNameSuffix) {
   return el;
 }
 
-// let level1 = svg.getElementById("level_1")
-// console.log(level1);
-// level1.addEventListener("onclick", () => console.log('click'));
+let level1 = svg.getElementById("level_1");
+level1.addEventListener("click", (e) => {
+  e.stopImmediatePropagation();
+  resetLevel(0);
+});
 
 svg.addEventListener("contextmenu", (e) => e.preventDefault());
 
@@ -59,7 +61,6 @@ svg.addEventListener("mousedown", (e) => {
     selectedShapeId = e.target.getAttribute("id");
     if (selectedShapeId.endsWith("seed")) {
       let shapeName = selectedShapeId.substring(0, selectedShapeId.length - 5);
-      // console.log(shapeName);
       let newShape = {};
       newShape.points = seedShapes[shapeName].points;
       newShape.offset = JSON.parse(
@@ -80,13 +81,12 @@ svg.addEventListener("mousedown", (e) => {
     buttonClicked = e.button;
   }
 });
+
 svg.addEventListener("mouseup", (e) => {
-  console.log(e.target);
   if (!selectedShapeId) {
-    console.log(e);
-    if (e.target.getAttribute("id") === "level_1") {
-      resetLevel();
-    }
+    // if (e.target.getAttribute("id") === "level_1") {
+    //   resetLevel();
+    // }
     return;
   }
 
@@ -117,15 +117,17 @@ svg.addEventListener("mouseup", (e) => {
   dragy = 0;
   rightClickDragActivated = false;
   selectedShapeId = undefined;
+  if (detectHit()) {
+    Object.values(shapes).forEach((shape) => {
+      shape.element.style.fill = "black";
+    });
+  } else {
+    Object.keys(shapes).forEach((shape) => {
+      let colourKey = Object.keys(seedShapes).find(key => shape.startsWith(key));
+      shapes[shape].element.style.fill = seedShapes[colourKey].colour;
+    });
+  }
 });
-function pointerWithinBounds(event) {
-  return (
-    event.clientX > 0 &&
-    event.clientY > 0 &&
-    event.clientX < svgWidth &&
-    event.clientY < svgHeight
-  );
-}
 
 svg.addEventListener("mousemove", (e) => {
   if (!selectedShapeId || !pointerWithinBounds(e)) {
@@ -154,26 +156,37 @@ svg.addEventListener("mousemove", (e) => {
       startx = e.clientX;
     }
   }
-  //   if (detectHit(shapes[selectedShapeId].element)) {
-  //     shapes[selectedShapeId].element.style.fill = "red";
-  //   } else {
-  //   }
 });
-function detectHit(polygonElement) {
-  let newpoints = [];
-  Object.values(polygonElement.points).forEach((point) => {
-    let newPoint = svg.createSVGPoint();
-    newPoint.x = point.x;
-    newPoint.y = point.y;
-    newPoint = newPoint.matrixTransform(polygonElement.getCTM());
-    newpoints.push([newPoint.x, newPoint.y]);
-  });
+function detectHit() {
   let hitFound = true;
-  shapes[selectedShapeId].target.forEach((tp) => {
-    let deltas = newpoints.map(
-      (p) => Math.pow(p[0] - tp[0], 2) + Math.pow(p[1] - tp[1], 2)
+  levels.car.requirements.forEach((req) => {
+    const matchingShapes = Object.keys(shapes).filter((k) =>
+      k.startsWith(req.shape)
     );
-    if (Math.min(...deltas) > 225) {
+    if (matchingShapes.length === 0) {
+      hitFound = false;
+    }
+    if (
+      !matchingShapes.some((match) => {
+        let newpoints = [];
+        Object.values(shapes[match].element.points).forEach((point) => {
+          let newPoint = svg.createSVGPoint();
+          newPoint.x = point.x;
+          newPoint.y = point.y;
+          newPoint = newPoint.matrixTransform(shapes[match].element.getCTM());
+          newpoints.push([newPoint.x, newPoint.y]);
+        });
+        return req.points.every((tp) => {
+          let minDelta = Math.min(
+            ...newpoints.map(
+              (p) =>
+                Math.pow(p[0] - (tp[0] + 250), 2) + Math.pow(p[1] - tp[1], 2)
+            )
+          );
+          return minDelta < 225;
+        });
+      })
+    ) {
       hitFound = false;
     }
   });
@@ -181,11 +194,15 @@ function detectHit(polygonElement) {
 }
 
 function resetLevel() {
-  console.log("resetting");
-  console.log(Object.values(shapes));
   Object.values(shapes).forEach((shape) => svg.removeChild(shape.element));
-  // shapes.forEach((shape) => {
-  // svg.removeChild(shape.element);
-  // });
   shapes = {};
+}
+
+function pointerWithinBounds(event) {
+  return (
+    event.clientX > 0 &&
+    event.clientY > 0 &&
+    event.clientX < svgWidth &&
+    event.clientY < svgHeight
+  );
 }
