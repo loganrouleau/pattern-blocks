@@ -1,7 +1,13 @@
 const svgWidth = 1000;
 const svgHeight = 800;
 let svg = document.getElementById("svg");
-let startx, starty, buttonClicked, selectedShapeId, dragx, dragy;
+let startx,
+  starty,
+  dragx,
+  dragy,
+  currentRotation,
+  buttonClicked,
+  selectedShapeId;
 let shapeId = 1;
 
 let shapes = {};
@@ -76,20 +82,19 @@ svg.addEventListener("mousedown", (e) => {
     starty = e.clientY;
     dragx = 0;
     dragy = 0;
+    currentRotation = 0;
     buttonClicked = e.button;
   }
 });
 
 svg.addEventListener("mouseup", (e) => {
   if (!selectedShapeId) {
-    // if (e.target.getAttribute("id") === "level_1") {
-    //   resetLevel();
-    // }
     return;
   }
 
   if (buttonClicked === 2) {
-    shapes[selectedShapeId].rotation += 3 * dragx;
+    shapes[selectedShapeId].rotation =
+      (shapes[selectedShapeId].rotation + currentRotation) % 360;
   }
   if (buttonClicked === 0) {
     if (e.clientX > svgWidth - 150 && e.clientY > svgHeight - 150) {
@@ -125,6 +130,7 @@ svg.addEventListener("mousemove", (e) => {
   dragy = e.clientY - starty;
   let news = svg.createSVGTransform();
   if (buttonClicked === 0) {
+    // translate
     news.setMatrix(
       svg
         .createSVGMatrix()
@@ -135,11 +141,20 @@ svg.addEventListener("mousemove", (e) => {
     );
     shapes[selectedShapeId].element.transform.baseVal.replaceItem(news, 0);
   } else {
-    let rotation = 3 * dragx + shapes[selectedShapeId].rotation;
-    news.setMatrix(svg.createSVGMatrix().rotate(rotation));
-    shapes[selectedShapeId].element.transform.baseVal.replaceItem(news, 1);
+    // rotate
+    if (dragx > 5 || dragx < -5) {
+      startx = e.clientX;
+      currentRotation += dragx > 0 ? 30 : -30;
+      news.setMatrix(
+        svg
+          .createSVGMatrix()
+          .rotate(currentRotation + shapes[selectedShapeId].rotation)
+      );
+      shapes[selectedShapeId].element.transform.baseVal.replaceItem(news, 1);
+    }
   }
 });
+
 function detectHit() {
   let hitFound = true;
   levels.car.requirements.forEach((req) => {

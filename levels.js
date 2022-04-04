@@ -1,4 +1,3 @@
-const cos30 = 86.6;
 const levels = {
   car: {
     outline: [
@@ -50,8 +49,8 @@ const levels = {
         shape: "hexagon",
         points: [
           [200, 3 * cos30],
-          [250, 2*cos30],
-          [350, 2*cos30],
+          [250, 2 * cos30],
+          [350, 2 * cos30],
           [400, 3 * cos30],
           [350, 4 * cos30],
           [250, 4 * cos30],
@@ -61,27 +60,27 @@ const levels = {
         shape: "trapezoid",
         points: [
           [100, 5 * cos30],
-          [200, 3*cos30],
-          [250, 4*cos30],
-          [200, 5 * cos30]
+          [200, 3 * cos30],
+          [250, 4 * cos30],
+          [200, 5 * cos30],
         ],
       },
       {
         shape: "trapezoid",
         points: [
-          [350, 4*cos30],
-          [400, 3*cos30],
-          [500, 5*cos30],
-          [400, 5 * cos30]
+          [350, 4 * cos30],
+          [400, 3 * cos30],
+          [500, 5 * cos30],
+          [400, 5 * cos30],
         ],
       },
       {
         shape: "parallelogram",
         points: [
-          [350, 2*cos30],
-          [450, 2*cos30],
-          [500, 3*cos30],
-          [400, 3 * cos30]
+          [350, 2 * cos30],
+          [450, 2 * cos30],
+          [500, 3 * cos30],
+          [400, 3 * cos30],
         ],
       },
     ],
