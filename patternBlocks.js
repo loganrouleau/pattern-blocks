@@ -3,7 +3,6 @@ const svgHeight = 800;
 let svg = document.getElementById("svg");
 let startx, starty, buttonClicked, selectedShapeId, dragx, dragy;
 let shapeId = 1;
-let rightClickDragActivated = false;
 
 let shapes = {};
 
@@ -41,8 +40,7 @@ function createPolygon(shapeName, shapeNameSuffix) {
   let currentTransforms = el.transform.baseVal;
   let translateTransform = svg.createSVGTransform();
   translateTransform.setTranslate(seedShape.offset[0], seedShape.offset[1]);
-  currentTransforms.appendItem(translateTransform); // 3. translate
-  currentTransforms.appendItem(svg.createSVGTransform()); // 2. flip
+  currentTransforms.appendItem(translateTransform); // 2. translate
   currentTransforms.appendItem(svg.createSVGTransform()); // 1. rotate
   svg.appendChild(el);
   return el;
@@ -91,18 +89,7 @@ svg.addEventListener("mouseup", (e) => {
   }
 
   if (buttonClicked === 2) {
-    if (rightClickDragActivated) {
-      shapes[selectedShapeId].rotation += 3 * dragx;
-    } else {
-      shapes[selectedShapeId].flipped = !shapes[selectedShapeId].flipped;
-      let trans = svg.createSVGTransform();
-      if (shapes[selectedShapeId].flipped) {
-        trans.setMatrix(svg.createSVGMatrix().flipX());
-      } else {
-        trans.setMatrix(svg.createSVGMatrix());
-      }
-      shapes[selectedShapeId].element.transform.baseVal.replaceItem(trans, 1);
-    }
+    shapes[selectedShapeId].rotation += 3 * dragx;
   }
   if (buttonClicked === 0) {
     if (e.clientX > svgWidth - 150 && e.clientY > svgHeight - 150) {
@@ -115,7 +102,6 @@ svg.addEventListener("mouseup", (e) => {
   }
   dragx = 0;
   dragy = 0;
-  rightClickDragActivated = false;
   selectedShapeId = undefined;
   if (detectHit()) {
     Object.values(shapes).forEach((shape) => {
@@ -123,7 +109,9 @@ svg.addEventListener("mouseup", (e) => {
     });
   } else {
     Object.keys(shapes).forEach((shape) => {
-      let colourKey = Object.keys(seedShapes).find(key => shape.startsWith(key));
+      let colourKey = Object.keys(seedShapes).find((key) =>
+        shape.startsWith(key)
+      );
       shapes[shape].element.style.fill = seedShapes[colourKey].colour;
     });
   }
@@ -147,14 +135,9 @@ svg.addEventListener("mousemove", (e) => {
     );
     shapes[selectedShapeId].element.transform.baseVal.replaceItem(news, 0);
   } else {
-    if (rightClickDragActivated) {
-      let rotation = 3 * dragx + shapes[selectedShapeId].rotation;
-      news.setMatrix(svg.createSVGMatrix().rotate(rotation));
-      shapes[selectedShapeId].element.transform.baseVal.replaceItem(news, 2);
-    } else if (dragx > 5 || dragx < -5) {
-      rightClickDragActivated = true;
-      startx = e.clientX;
-    }
+    let rotation = 3 * dragx + shapes[selectedShapeId].rotation;
+    news.setMatrix(svg.createSVGMatrix().rotate(rotation));
+    shapes[selectedShapeId].element.transform.baseVal.replaceItem(news, 1);
   }
 });
 function detectHit() {
