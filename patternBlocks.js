@@ -123,6 +123,11 @@ svg.addEventListener("mouseup", (e) => {
 });
 
 svg.addEventListener("mousemove", (e) => {
+  console.log(
+    isPointInFill(e.clientX, e.clientY, levels.car.outline)
+      ? "INSIDE"
+      : "outside"
+  );
   if (!selectedShapeId || !pointerWithinBounds(e)) {
     return;
   }
@@ -189,6 +194,35 @@ function detectHit() {
     }
   });
   return hitFound;
+}
+
+function isPointInFill(x, y, polyPoints) {
+  // ray tracing algorithm (horizontal ray heading in positive x direction)
+  let rayIntersectionsWithPolyEdge = 0;
+  for (let i = 0; i < polyPoints.length; i++) {
+    let polyPoint1 = JSON.parse(JSON.stringify(polyPoints[i]));
+    let polyPoint2 = JSON.parse(
+      JSON.stringify(polyPoints[i + 1 === polyPoints.length ? 0 : i + 1])
+    );
+    polyPoint1[0] += 250;
+    polyPoint2[0] += 250;
+    if (
+      (polyPoint1[0] < x && polyPoint2[0] < x) ||
+      (polyPoint1[1] > y && polyPoint2[1] > y) ||
+      (polyPoint1[1] < y && polyPoint2[1] < y)
+    ) {
+      continue;
+    }
+    let slope =
+      (polyPoint2[1] - polyPoint1[1]) / (polyPoint2[0] - polyPoint1[0]);
+    if (slope !== 0) {
+      let xIntercept = (1 / slope) * (y - polyPoint1[1]) + polyPoint1[0];
+      if (xIntercept >= x) {
+        rayIntersectionsWithPolyEdge++;
+      }
+    }
+  }
+  return rayIntersectionsWithPolyEdge % 2 === 1;
 }
 
 function resetLevel() {
