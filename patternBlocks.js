@@ -8,8 +8,8 @@ let startx,
   currentRotation,
   buttonClicked,
   selectedBlockId;
-let shapeId = 1;
-
+let blockId = 1;
+let shapeBoundingRect;
 let blocks = {};
 
 Object.keys(seedBlocks).forEach((id) => createPolygon(id, "seed"));
@@ -18,15 +18,18 @@ function drawOutline() {
   var el = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
   // el.setAttribute("id", `${shapeName}_${shapeNameSuffix}`);
   // el.style.fill = seedShape.colour;
+  el.setAttribute("id", "shape_outline");
   el.style.fill = "none";
   el.style.stroke = "black";
+  shapes.car.outline.forEach((point) => (point[0] += 250));
   for (value of shapes.car.outline) {
     var point = svg.createSVGPoint();
-    point.x = value[0] + 250;
+    point.x = value[0];
     point.y = value[1];
     el.points.appendItem(point);
   }
   svg.appendChild(el);
+  shapeBoundingRect = el.getBoundingClientRect();
 }
 
 function createPolygon(shapeName, shapeNameSuffix) {
@@ -70,12 +73,12 @@ svg.addEventListener("mousedown", (e) => {
       newBlock.offset = JSON.parse(
         JSON.stringify(seedBlocks[blockName].offset)
       );
-      newBlock.element = createPolygon(blockName, shapeId);
+      newBlock.element = createPolygon(blockName, blockId);
       newBlock.flipped = false;
       newBlock.rotation = 0;
-      selectedBlockId = `${blockName}_${shapeId}`;
+      selectedBlockId = `${blockName}_${blockId}`;
       blocks[selectedBlockId] = newBlock;
-      shapeId++;
+      blockId++;
     }
     svg.appendChild(blocks[selectedBlockId].element);
     startx = e.clientX;
@@ -108,6 +111,7 @@ svg.addEventListener("mouseup", (e) => {
   dragx = 0;
   dragy = 0;
   selectedBlockId = undefined;
+  percentOfShapeCovered();
   if (detectHit()) {
     Object.values(blocks).forEach((shape) => {
       shape.element.style.fill = "black";
@@ -123,11 +127,6 @@ svg.addEventListener("mouseup", (e) => {
 });
 
 svg.addEventListener("mousemove", (e) => {
-  console.log(
-    isPointInFill(e.clientX, e.clientY, shapes.car.outline)
-      ? "INSIDE"
-      : "outside"
-  );
   if (!selectedBlockId || !pointerWithinBounds(e)) {
     return;
   }
@@ -171,19 +170,11 @@ function detectHit() {
     }
     if (
       !matchingShapes.some((match) => {
-        let newpoints = [];
-        Object.values(blocks[match].element.points).forEach((point) => {
-          let newPoint = svg.createSVGPoint();
-          newPoint.x = point.x;
-          newPoint.y = point.y;
-          newPoint = newPoint.matrixTransform(blocks[match].element.getCTM());
-          newpoints.push([newPoint.x, newPoint.y]);
-        });
+        let newpoints = getTransformedCoordinates(blocks[match]);
         return req.points.every((tp) => {
           let minDelta = Math.min(
             ...newpoints.map(
-              (p) =>
-                Math.pow(p[0] - (tp[0] + 250), 2) + Math.pow(p[1] - tp[1], 2)
+              (p) => Math.pow(p[0] - tp[0], 2) + Math.pow(p[1] - tp[1], 2)
             )
           );
           return minDelta < 225;
@@ -196,16 +187,50 @@ function detectHit() {
   return hitFound;
 }
 
+function getTransformedCoordinates(block) {
+  let newPoints = [];
+  const ctm = block.element.getCTM();
+  Object.values(block.element.points).forEach((point) => {
+    let transformedPoint = svg.createSVGPoint();
+    transformedPoint.x = point.x;
+    transformedPoint.y = point.y;
+    transformedPoint = transformedPoint.matrixTransform(ctm);
+    newPoints.push([transformedPoint.x, transformedPoint.y]);
+  });
+  return newPoints;
+}
+
+function percentOfShapeCovered() {
+  let shapePoints = [];
+  let totalPoints = 0;
+  let covered = 0;
+  for (let x = shapeBoundingRect.left; x <= shapeBoundingRect.right; x += 5) {
+    for (let y = shapeBoundingRect.top; y <= shapeBoundingRect.bottom; y += 5) {
+      totalPoints++;
+      if (isPointInFill(x, y, shapes.car.outline)) {
+        shapePoints.push([x, y]);
+      }
+    }
+  }
+
+  shapePoints.forEach((point) => {
+    for (const key of Object.keys(blocks)) {
+      let coords = getTransformedCoordinates(blocks[key]);
+      if (coords && isPointInFill(point[0], point[1], coords)) {
+        covered++;
+        break;
+      }
+    }
+  });
+  console.log(100 * (covered / shapePoints.length) + "%");
+}
+
 function isPointInFill(x, y, polyPoints) {
   // ray tracing algorithm (horizontal ray heading in positive x direction)
   let rayIntersectionsWithPolyEdge = 0;
   for (let i = 0; i < polyPoints.length; i++) {
-    let polyPoint1 = JSON.parse(JSON.stringify(polyPoints[i]));
-    let polyPoint2 = JSON.parse(
-      JSON.stringify(polyPoints[i + 1 === polyPoints.length ? 0 : i + 1])
-    );
-    polyPoint1[0] += 250;
-    polyPoint2[0] += 250;
+    let polyPoint1 = polyPoints[i];
+    let polyPoint2 = polyPoints[i + 1 === polyPoints.length ? 0 : i + 1];
     if (
       (polyPoint1[0] < x && polyPoint2[0] < x) ||
       (polyPoint1[1] > y && polyPoint2[1] > y) ||
@@ -215,11 +240,9 @@ function isPointInFill(x, y, polyPoints) {
     }
     let slope =
       (polyPoint2[1] - polyPoint1[1]) / (polyPoint2[0] - polyPoint1[0]);
-    if (slope !== 0) {
-      let xIntercept = (1 / slope) * (y - polyPoint1[1]) + polyPoint1[0];
-      if (xIntercept >= x) {
-        rayIntersectionsWithPolyEdge++;
-      }
+    let xIntercept = (1 / slope) * (y - polyPoint1[1]) + polyPoint1[0];
+    if (xIntercept >= x) {
+      rayIntersectionsWithPolyEdge++;
     }
   }
   return rayIntersectionsWithPolyEdge % 2 === 1;
