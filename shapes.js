@@ -1,4 +1,4 @@
-const levels = {
+const shapes = {
   car: {
     outline: [
       [0, cos30],

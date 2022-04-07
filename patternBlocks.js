@@ -7,12 +7,12 @@ let startx,
   dragy,
   currentRotation,
   buttonClicked,
-  selectedShapeId;
+  selectedBlockId;
 let shapeId = 1;
 
-let shapes = {};
+let blocks = {};
 
-Object.keys(seedShapes).forEach((id) => createPolygon(id, "seed"));
+Object.keys(seedBlocks).forEach((id) => createPolygon(id, "seed"));
 drawOutline();
 function drawOutline() {
   var el = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
@@ -20,7 +20,7 @@ function drawOutline() {
   // el.style.fill = seedShape.colour;
   el.style.fill = "none";
   el.style.stroke = "black";
-  for (value of levels.car.outline) {
+  for (value of shapes.car.outline) {
     var point = svg.createSVGPoint();
     point.x = value[0] + 250;
     point.y = value[1];
@@ -30,14 +30,14 @@ function drawOutline() {
 }
 
 function createPolygon(shapeName, shapeNameSuffix) {
-  seedShape = seedShapes[shapeName];
+  seedBlock = seedBlocks[shapeName];
   var el = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
   el.setAttribute("id", `${shapeName}_${shapeNameSuffix}`);
   el.style.transformBox = "fill-box";
   el.style.transformOrigin = "50% 50%";
-  el.style.fill = seedShape.colour;
+  el.style.fill = seedBlock.colour;
   el.style.stroke = "black";
-  for (value of seedShape.points) {
+  for (value of seedBlock.points) {
     var point = svg.createSVGPoint();
     point.x = value[0];
     point.y = value[1];
@@ -45,7 +45,7 @@ function createPolygon(shapeName, shapeNameSuffix) {
   }
   let currentTransforms = el.transform.baseVal;
   let translateTransform = svg.createSVGTransform();
-  translateTransform.setTranslate(seedShape.offset[0], seedShape.offset[1]);
+  translateTransform.setTranslate(seedBlock.offset[0], seedBlock.offset[1]);
   currentTransforms.appendItem(translateTransform); // 2. translate
   currentTransforms.appendItem(svg.createSVGTransform()); // 1. rotate
   svg.appendChild(el);
@@ -62,22 +62,22 @@ svg.addEventListener("contextmenu", (e) => e.preventDefault());
 
 svg.addEventListener("mousedown", (e) => {
   if (e.target.tagName === "polygon") {
-    selectedShapeId = e.target.getAttribute("id");
-    if (selectedShapeId.endsWith("seed")) {
-      let shapeName = selectedShapeId.substring(0, selectedShapeId.length - 5);
-      let newShape = {};
-      newShape.points = seedShapes[shapeName].points;
-      newShape.offset = JSON.parse(
-        JSON.stringify(seedShapes[shapeName].offset)
+    selectedBlockId = e.target.getAttribute("id");
+    if (selectedBlockId.endsWith("seed")) {
+      let blockName = selectedBlockId.substring(0, selectedBlockId.length - 5);
+      let newBlock = {};
+      newBlock.points = seedBlocks[blockName].points;
+      newBlock.offset = JSON.parse(
+        JSON.stringify(seedBlocks[blockName].offset)
       );
-      newShape.element = createPolygon(shapeName, shapeId);
-      newShape.flipped = false;
-      newShape.rotation = 0;
-      selectedShapeId = `${shapeName}_${shapeId}`;
-      shapes[selectedShapeId] = newShape;
+      newBlock.element = createPolygon(blockName, shapeId);
+      newBlock.flipped = false;
+      newBlock.rotation = 0;
+      selectedBlockId = `${blockName}_${shapeId}`;
+      blocks[selectedBlockId] = newBlock;
       shapeId++;
     }
-    svg.appendChild(shapes[selectedShapeId].element);
+    svg.appendChild(blocks[selectedBlockId].element);
     startx = e.clientX;
     starty = e.clientY;
     dragx = 0;
@@ -88,47 +88,47 @@ svg.addEventListener("mousedown", (e) => {
 });
 
 svg.addEventListener("mouseup", (e) => {
-  if (!selectedShapeId) {
+  if (!selectedBlockId) {
     return;
   }
 
   if (buttonClicked === 2) {
-    shapes[selectedShapeId].rotation =
-      (shapes[selectedShapeId].rotation + currentRotation) % 360;
+    blocks[selectedBlockId].rotation =
+      (blocks[selectedBlockId].rotation + currentRotation) % 360;
   }
   if (buttonClicked === 0) {
     if (e.clientX > svgWidth - 150 && e.clientY > svgHeight - 150) {
-      svg.removeChild(shapes[selectedShapeId].element);
-      delete shapes[selectedShapeId];
+      svg.removeChild(blocks[selectedBlockId].element);
+      delete blocks[selectedBlockId];
     } else {
-      shapes[selectedShapeId].offset[0] += dragx;
-      shapes[selectedShapeId].offset[1] += dragy;
+      blocks[selectedBlockId].offset[0] += dragx;
+      blocks[selectedBlockId].offset[1] += dragy;
     }
   }
   dragx = 0;
   dragy = 0;
-  selectedShapeId = undefined;
+  selectedBlockId = undefined;
   if (detectHit()) {
-    Object.values(shapes).forEach((shape) => {
+    Object.values(blocks).forEach((shape) => {
       shape.element.style.fill = "black";
     });
   } else {
-    Object.keys(shapes).forEach((shape) => {
-      let colourKey = Object.keys(seedShapes).find((key) =>
+    Object.keys(blocks).forEach((shape) => {
+      let colourKey = Object.keys(seedBlocks).find((key) =>
         shape.startsWith(key)
       );
-      shapes[shape].element.style.fill = seedShapes[colourKey].colour;
+      blocks[shape].element.style.fill = seedBlocks[colourKey].colour;
     });
   }
 });
 
 svg.addEventListener("mousemove", (e) => {
   console.log(
-    isPointInFill(e.clientX, e.clientY, levels.car.outline)
+    isPointInFill(e.clientX, e.clientY, shapes.car.outline)
       ? "INSIDE"
       : "outside"
   );
-  if (!selectedShapeId || !pointerWithinBounds(e)) {
+  if (!selectedBlockId || !pointerWithinBounds(e)) {
     return;
   }
   dragx = e.clientX - startx;
@@ -140,11 +140,11 @@ svg.addEventListener("mousemove", (e) => {
       svg
         .createSVGMatrix()
         .translate(
-          dragx + shapes[selectedShapeId].offset[0],
-          dragy + shapes[selectedShapeId].offset[1]
+          dragx + blocks[selectedBlockId].offset[0],
+          dragy + blocks[selectedBlockId].offset[1]
         )
     );
-    shapes[selectedShapeId].element.transform.baseVal.replaceItem(news, 0);
+    blocks[selectedBlockId].element.transform.baseVal.replaceItem(news, 0);
   } else {
     // rotate
     if (dragx > 5 || dragx < -5) {
@@ -153,17 +153,17 @@ svg.addEventListener("mousemove", (e) => {
       news.setMatrix(
         svg
           .createSVGMatrix()
-          .rotate(currentRotation + shapes[selectedShapeId].rotation)
+          .rotate(currentRotation + blocks[selectedBlockId].rotation)
       );
-      shapes[selectedShapeId].element.transform.baseVal.replaceItem(news, 1);
+      blocks[selectedBlockId].element.transform.baseVal.replaceItem(news, 1);
     }
   }
 });
 
 function detectHit() {
   let hitFound = true;
-  levels.car.requirements.forEach((req) => {
-    const matchingShapes = Object.keys(shapes).filter((k) =>
+  shapes.car.requirements.forEach((req) => {
+    const matchingShapes = Object.keys(blocks).filter((k) =>
       k.startsWith(req.shape)
     );
     if (matchingShapes.length === 0) {
@@ -172,11 +172,11 @@ function detectHit() {
     if (
       !matchingShapes.some((match) => {
         let newpoints = [];
-        Object.values(shapes[match].element.points).forEach((point) => {
+        Object.values(blocks[match].element.points).forEach((point) => {
           let newPoint = svg.createSVGPoint();
           newPoint.x = point.x;
           newPoint.y = point.y;
-          newPoint = newPoint.matrixTransform(shapes[match].element.getCTM());
+          newPoint = newPoint.matrixTransform(blocks[match].element.getCTM());
           newpoints.push([newPoint.x, newPoint.y]);
         });
         return req.points.every((tp) => {
@@ -226,8 +226,8 @@ function isPointInFill(x, y, polyPoints) {
 }
 
 function resetLevel() {
-  Object.values(shapes).forEach((shape) => svg.removeChild(shape.element));
-  shapes = {};
+  Object.values(blocks).forEach((shape) => svg.removeChild(shape.element));
+  blocks = {};
 }
 
 function pointerWithinBounds(event) {

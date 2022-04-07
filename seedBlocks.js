@@ -1,5 +1,5 @@
 const cos30 = 100 * Math.cos(Math.PI / 6);
-const seedShapes = {
+const seedBlocks = {
   triangle: {
     colour: "green",
     points: [
