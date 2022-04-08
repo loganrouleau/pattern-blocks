@@ -111,7 +111,6 @@ svg.addEventListener("mouseup", (e) => {
   dragx = 0;
   dragy = 0;
   selectedBlockId = undefined;
-  percentOfShapeCovered();
   if (detectHit()) {
     Object.values(blocks).forEach((shape) => {
       shape.element.style.fill = "black";
@@ -160,31 +159,9 @@ svg.addEventListener("mousemove", (e) => {
 });
 
 function detectHit() {
-  let hitFound = true;
-  shapes.car.requirements.forEach((req) => {
-    const matchingShapes = Object.keys(blocks).filter((k) =>
-      k.startsWith(req.shape)
-    );
-    if (matchingShapes.length === 0) {
-      hitFound = false;
-    }
-    if (
-      !matchingShapes.some((match) => {
-        let newpoints = getTransformedCoordinates(blocks[match]);
-        return req.points.every((tp) => {
-          let minDelta = Math.min(
-            ...newpoints.map(
-              (p) => Math.pow(p[0] - tp[0], 2) + Math.pow(p[1] - tp[1], 2)
-            )
-          );
-          return minDelta < 225;
-        });
-      })
-    ) {
-      hitFound = false;
-    }
-  });
-  return hitFound;
+  let percentOfShapeCoveredExactlyOnce = percentOfShapeCoveredOnce();
+  console.log(percentOfShapeCoveredExactlyOnce);
+  return percentOfShapeCoveredExactlyOnce > 90;
 }
 
 function getTransformedCoordinates(block) {
@@ -200,29 +177,32 @@ function getTransformedCoordinates(block) {
   return newPoints;
 }
 
-function percentOfShapeCovered() {
+function percentOfShapeCoveredOnce() {
   let shapePoints = [];
-  let totalPoints = 0;
-  let covered = 0;
+  let pointsCoveredOnce = 0;
   for (let x = shapeBoundingRect.left; x <= shapeBoundingRect.right; x += 5) {
     for (let y = shapeBoundingRect.top; y <= shapeBoundingRect.bottom; y += 5) {
-      totalPoints++;
       if (isPointInFill(x, y, shapes.car.outline)) {
         shapePoints.push([x, y]);
       }
     }
   }
-
   shapePoints.forEach((point) => {
+    let covered = 0;
     for (const key of Object.keys(blocks)) {
       let coords = getTransformedCoordinates(blocks[key]);
-      if (coords && isPointInFill(point[0], point[1], coords)) {
+      if (isPointInFill(point[0], point[1], coords)) {
         covered++;
-        break;
+        if (covered > 1) {
+          break;
+        }
       }
     }
+    if (covered === 1) {
+      pointsCoveredOnce++;
+    }
   });
-  console.log(100 * (covered / shapePoints.length) + "%");
+  return 100 * (pointsCoveredOnce / shapePoints.length);
 }
 
 function isPointInFill(x, y, polyPoints) {
