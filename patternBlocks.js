@@ -21,8 +21,8 @@ function drawOutline() {
   el.setAttribute("id", "shape_outline");
   el.style.fill = "none";
   el.style.stroke = "black";
-  shapes.car.outline.forEach((point) => (point[0] += 250));
-  for (value of shapes.car.outline) {
+  shapes.penguin.outline.forEach((point) => (point[0] += 250));
+  for (value of shapes.penguin.outline) {
     var point = svg.createSVGPoint();
     point.x = value[0];
     point.y = value[1];
@@ -161,7 +161,7 @@ svg.addEventListener("mousemove", (e) => {
 function detectHit() {
   let percentOfShapeCoveredExactlyOnce = percentOfShapeCoveredOnce();
   console.log(percentOfShapeCoveredExactlyOnce);
-  return percentOfShapeCoveredExactlyOnce > 90;
+  return percentOfShapeCoveredExactlyOnce > 95;
 }
 
 function getTransformedCoordinates(block) {
@@ -182,7 +182,7 @@ function percentOfShapeCoveredOnce() {
   let pointsCoveredOnce = 0;
   for (let x = shapeBoundingRect.left; x <= shapeBoundingRect.right; x += 5) {
     for (let y = shapeBoundingRect.top; y <= shapeBoundingRect.bottom; y += 5) {
-      if (isPointInFill(x, y, shapes.car.outline)) {
+      if (isPointInFill(x, y, shapes.penguin.outline)) {
         shapePoints.push([x, y]);
       }
     }

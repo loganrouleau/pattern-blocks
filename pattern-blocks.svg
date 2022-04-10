@@ -4,7 +4,7 @@ xmlns:xlink="http://www.w3.org/1999/xlink">
   <polygon points="0,0 1000,0 1000,800 0,800" fill="none" stroke="red"/>
   <polygon points="900,700 1000,700 1000,800 900,800" fill="none" stroke="green"/>
   <rect id="level_1" x="800" y="200" width="200" height="100" rx="15" fill="green" stroke="black"/>
-  <text style="user-select: none" x="850" y="250" font-family="Verdana" font-size="35" fill="blue">Hello</text>
+  <text style="user-select: none" x="850" y="250" font-family="Verdana" font-size="35" fill="blue">Reset</text>
   <script xlink:href="seedBlocks.js" />
   <script xlink:href="shapes.js" />
   <script xlink:href="patternBlocks.js" />
