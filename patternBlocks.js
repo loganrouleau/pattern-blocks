@@ -37,7 +37,7 @@ function createPolygon(shapeName, shapeNameSuffix) {
   var el = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
   el.setAttribute("id", `${shapeName}_${shapeNameSuffix}`);
   el.style.transformBox = "fill-box";
-  el.style.transformOrigin = "50% 50%";
+  el.style.transformOrigin = shapeName === "triangle" ? "50% 57.7%" : "50% 50%";
   el.style.fill = seedBlock.colour;
   el.style.stroke = "black";
   for (value of seedBlock.points) {
